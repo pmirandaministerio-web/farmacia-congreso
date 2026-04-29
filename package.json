@@ -1,0 +1,16 @@
+{
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "server": "node server.js",
+    "build": "vite build --base ./",
+    "preview": "vite preview --host 127.0.0.1",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@netlify/blobs": "^10.7.4",
+    "@vitejs/plugin-react": "latest",
+    "react": "latest",
+    "react-dom": "latest",
+    "vite": "latest"
+  }
+}
