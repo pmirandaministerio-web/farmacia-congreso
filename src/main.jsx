@@ -415,7 +415,6 @@ function AdminPanel({ store, saveStore, onClose }) {
               <input type="password" value={login.pass} onChange={(event) => setLogin({ ...login, pass: event.target.value })} />
             </label>
             <button className="primary-button full" type="submit">Entrar</button>
-            <p className="admin-help">Usuario: admin · Contraseña: congreso2026</p>
             {message && <p className="form-message error">{message}</p>}
           </form>
         ) : (
