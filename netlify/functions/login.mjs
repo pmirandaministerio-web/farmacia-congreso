@@ -1,20 +1,18 @@
-const crypto = require("crypto");
+import crypto from "node:crypto";
 
 const ADMIN_USER = process.env.ADMIN_USER || "admin";
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "congreso2026";
 const ADMIN_SECRET = process.env.ADMIN_SECRET || ADMIN_PASSWORD;
 
-function response(statusCode, body) {
-  return {
-    statusCode,
+function json(body, status = 200) {
+  return Response.json(body, {
+    status,
     headers: {
-      "Content-Type": "application/json; charset=utf-8",
       "Access-Control-Allow-Origin": "*",
       "Access-Control-Allow-Methods": "POST,OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type"
-    },
-    body: JSON.stringify(body)
-  };
+    }
+  });
 }
 
 function sign(value) {
@@ -26,25 +24,28 @@ function createToken() {
     user: ADMIN_USER,
     expires: Date.now() + 1000 * 60 * 60 * 12
   })).toString("base64url");
+
   return `${payload}.${sign(payload)}`;
 }
 
-exports.handler = async (event) => {
-  if (event.httpMethod === "OPTIONS") {
-    return response(200, { ok: true });
+export default async function handler(request) {
+  if (request.method === "OPTIONS") {
+    return json({ ok: true });
   }
 
-  if (event.httpMethod !== "POST") {
-    return response(405, { error: "Metodo no permitido." });
+  if (request.method !== "POST") {
+    return json({ error: "Metodo no permitido." }, 405);
   }
 
   try {
-    const credentials = JSON.parse(event.body || "{}");
+    const credentials = await request.json();
+
     if (credentials.user === ADMIN_USER && credentials.pass === ADMIN_PASSWORD) {
-      return response(200, { token: createToken() });
+      return json({ token: createToken() });
     }
-    return response(401, { error: "Usuario o contraseña incorrectos." });
+
+    return json({ error: "Usuario o contrasena incorrectos." }, 401);
   } catch {
-    return response(400, { error: "No se pudo iniciar sesion." });
+    return json({ error: "No se pudo iniciar sesion." }, 400);
   }
-};
+}

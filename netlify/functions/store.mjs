@@ -1,5 +1,5 @@
-const { getStore } = require("@netlify/blobs");
-const crypto = require("crypto");
+import crypto from "node:crypto";
+import { getStore } from "@netlify/blobs";
 
 const ADMIN_USER = process.env.ADMIN_USER || "admin";
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "congreso2026";
@@ -11,6 +11,17 @@ const initialStore = {
   products: []
 };
 
+function json(body, status = 200) {
+  return Response.json(body, {
+    status,
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET,PUT,OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type,Authorization"
+    }
+  });
+}
+
 function cleanStore(store) {
   return {
     logo: typeof store.logo === "string" ? store.logo : "",
@@ -19,25 +30,12 @@ function cleanStore(store) {
   };
 }
 
-function response(statusCode, body) {
-  return {
-    statusCode,
-    headers: {
-      "Content-Type": "application/json; charset=utf-8",
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET,PUT,OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type"
-    },
-    body: JSON.stringify(body)
-  };
-}
-
 function sign(value) {
   return crypto.createHmac("sha256", ADMIN_SECRET).update(value).digest("base64url");
 }
 
-function isValidToken(event) {
-  const header = event.headers.authorization || event.headers.Authorization || "";
+function isValidToken(request) {
+  const header = request.headers.get("authorization") || "";
   const token = header.startsWith("Bearer ") ? header.slice(7) : "";
   const [payload, signature] = token.split(".");
 
@@ -53,31 +51,31 @@ function isValidToken(event) {
   }
 }
 
-exports.handler = async (event) => {
-  if (event.httpMethod === "OPTIONS") {
-    return response(200, { ok: true });
+export default async function handler(request) {
+  if (request.method === "OPTIONS") {
+    return json({ ok: true });
   }
 
   const store = getStore("farmacia-congreso");
 
-  if (event.httpMethod === "GET") {
+  if (request.method === "GET") {
     const savedStore = await store.get("store", { type: "json" });
-    return response(200, { ...initialStore, ...(savedStore || {}) });
+    return json({ ...initialStore, ...(savedStore || {}) });
   }
 
-  if (event.httpMethod === "PUT") {
-    if (!isValidToken(event)) {
-      return response(401, { error: "Sesion de administrador requerida." });
+  if (request.method === "PUT") {
+    if (!isValidToken(request)) {
+      return json({ error: "Sesion de administrador requerida." }, 401);
     }
 
     try {
-      const nextStore = cleanStore(JSON.parse(event.body || "{}"));
+      const nextStore = cleanStore(await request.json());
       await store.setJSON("store", nextStore);
-      return response(200, nextStore);
+      return json(nextStore);
     } catch (error) {
-      return response(400, { error: error.message || "No se pudo guardar." });
+      return json({ error: error.message || "No se pudo guardar." }, 400);
     }
   }
 
-  return response(405, { error: "Metodo no permitido." });
-};
+  return json({ error: "Metodo no permitido." }, 405);
+}
