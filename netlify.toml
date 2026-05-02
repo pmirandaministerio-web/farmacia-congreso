@@ -11,7 +11,31 @@
 
 [[redirects]]
   from = "/api/store"
-  to = "/.netlify/functions/store"
+  to = "/.netlify/functions/store?action=store"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/product"
+  to = "/.netlify/functions/store?action=product"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/asset"
+  to = "/.netlify/functions/store?action=asset"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/migrate-images"
+  to = "/.netlify/functions/store?action=migrate-images"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/image"
+  to = "/.netlify/functions/image"
   status = 200
   force = true
 

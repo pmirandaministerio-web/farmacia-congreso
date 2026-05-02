@@ -47,6 +47,41 @@ async function persistStore(store) {
   return response.json();
 }
 
+async function adminRequest(path, method, payload) {
+  const token = sessionStorage.getItem("farmacia-admin-token") || "";
+  const response = await fetch(`${API_BASE}${path}`, {
+    method,
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`
+    },
+    body: payload ? JSON.stringify(payload) : undefined
+  });
+
+  const result = await response.json();
+  if (!response.ok) {
+    throw new Error(result.error || "No se pudo guardar.");
+  }
+
+  return result;
+}
+
+function saveProductRemote(product) {
+  return adminRequest("/api/product", "PUT", { product });
+}
+
+function deleteProductRemote(id) {
+  return adminRequest("/api/product", "DELETE", { id });
+}
+
+function saveAssetRemote(key, value) {
+  return adminRequest("/api/asset", "PUT", { key, value });
+}
+
+function migrateImagesRemote() {
+  return adminRequest("/api/migrate-images", "PUT", {});
+}
+
 async function loginAdmin(credentials) {
   const response = await fetch(`${API_BASE}/api/login`, {
     method: "POST",
@@ -130,6 +165,10 @@ function App() {
         alert("No se pudo guardar. Revisá la conexión con el servidor o probá optimizar las imágenes.");
         throw error;
       });
+  }
+
+  function saveStoreLocally(next) {
+    setStore({ ...initialStore, ...next });
   }
 
   const filteredProducts = useMemo(() => {
@@ -331,7 +370,7 @@ function App() {
         </div>
       </footer>
 
-      {adminOpen && <AdminPanel store={store} saveStore={saveStore} onClose={() => setAdminOpen(false)} />}
+      {adminOpen && <AdminPanel store={store} saveStore={saveStore} saveStoreLocally={saveStoreLocally} onClose={() => setAdminOpen(false)} />}
     </>
   );
 }
@@ -358,7 +397,7 @@ function ProductCard({ product, onAdd }) {
   );
 }
 
-function AdminPanel({ store, saveStore, onClose }) {
+function AdminPanel({ store, saveStore, saveStoreLocally, onClose }) {
   const [loggedIn, setLoggedIn] = useState(Boolean(sessionStorage.getItem("farmacia-admin-token")));
   const [login, setLogin] = useState({ user: "", pass: "" });
   const [editingId, setEditingId] = useState(null);
@@ -381,7 +420,8 @@ function AdminPanel({ store, saveStore, onClose }) {
     setMessage("Optimizando imagen...");
     try {
       const image = await imageToDataUrl(file, IMAGE_PRESETS[key]);
-      await saveStore({ ...store, [key]: image });
+      const savedStore = await saveAssetRemote(key, image);
+      saveStoreLocally(savedStore);
       setMessage("Imagen guardada.");
     } catch {
       setMessage("No se pudo guardar la imagen.");
@@ -401,17 +441,17 @@ function AdminPanel({ store, saveStore, onClose }) {
   }
 
   async function optimizeCurrentImages() {
-    setMessage("Optimizando imágenes cargadas...");
+    setMessage("Preparando catálogo grande...");
     try {
-      const optimizedStore = await optimizeStoreImages(store);
-      await saveStore(optimizedStore);
-      setMessage("Imágenes optimizadas y guardadas.");
+      const migratedStore = await migrateImagesRemote();
+      saveStoreLocally(migratedStore);
+      setMessage("Catálogo preparado para cargar muchas imágenes.");
     } catch {
-      setMessage("No se pudieron optimizar las imágenes.");
+      setMessage("No se pudo preparar el catálogo.");
     }
   }
 
-  function submitProduct(event) {
+  async function submitProduct(event) {
     event.preventDefault();
     if (!form.name.trim() || !form.price || !form.category || !form.image) {
       setMessage("Completá nombre, precio, categoría e imagen.");
@@ -419,14 +459,17 @@ function AdminPanel({ store, saveStore, onClose }) {
     }
 
     const product = { ...form, name: form.name.trim(), price: Number(form.price) };
-    const nextProducts = editingId
-      ? store.products.map((item) => (item.id === editingId ? { ...product, id: editingId } : item))
-      : [{ ...product, id: crypto.randomUUID() }, ...store.products];
+    const productToSave = editingId ? { ...product, id: editingId } : { ...product, id: crypto.randomUUID() };
 
-    saveStore({ ...store, products: nextProducts });
-    setForm(emptyProduct());
-    setEditingId(null);
-    setMessage(editingId ? "Producto actualizado." : "Producto agregado.");
+    try {
+      const savedStore = await saveProductRemote(productToSave);
+      saveStoreLocally(savedStore);
+      setForm(emptyProduct());
+      setEditingId(null);
+      setMessage(editingId ? "Producto actualizado." : "Producto agregado.");
+    } catch {
+      setMessage("No se pudo guardar el producto. Probá con una imagen más liviana.");
+    }
   }
 
   function editProduct(product) {
@@ -435,11 +478,16 @@ function AdminPanel({ store, saveStore, onClose }) {
     setMessage("");
   }
 
-  function deleteProduct(id) {
-    saveStore({ ...store, products: store.products.filter((product) => product.id !== id) });
-    if (editingId === id) {
-      setEditingId(null);
-      setForm(emptyProduct());
+  async function deleteProduct(id) {
+    try {
+      const savedStore = await deleteProductRemote(id);
+      saveStoreLocally(savedStore);
+      if (editingId === id) {
+        setEditingId(null);
+        setForm(emptyProduct());
+      }
+    } catch {
+      setMessage("No se pudo eliminar el producto.");
     }
   }
 
@@ -474,7 +522,7 @@ function AdminPanel({ store, saveStore, onClose }) {
             <section className="admin-card">
               <h3>Imagen principal y logo</h3>
               <button className="optimize-button" type="button" onClick={optimizeCurrentImages}>
-                Optimizar imágenes actuales
+                Preparar catálogo grande
               </button>
               <div className="asset-grid">
                 <label className="upload-card">
