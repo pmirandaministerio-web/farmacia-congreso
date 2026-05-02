@@ -443,7 +443,7 @@ function ProductCard({ product, onAdd, onView }) {
       </button>
       <div className="product-info">
         <span className="category-chip">{product.category}</span>
-        <button className="product-name-button" type="button" onClick={() => onView(product)}>
+        <button className="product-name-button" type="button" title={product.name} aria-label={`Ver imagen de ${product.name}`} onClick={() => onView(product)}>
           {product.name}
         </button>
         <div className="product-meta">

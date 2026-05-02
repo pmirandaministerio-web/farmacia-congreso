@@ -637,12 +637,27 @@ a {
 .product-name-button {
   font-size: 1.03rem;
   font-weight: 800;
+  line-height: 1.25;
   margin: 12px 0;
+  max-height: 3.9em;
+  overflow: hidden;
+  position: relative;
+  white-space: normal;
+  word-break: break-word;
 }
 
 .product-name-button:hover,
 .product-name-button:focus-visible {
+  background: #fff;
+  border: 1px solid #d7e7de;
+  border-radius: 12px;
+  box-shadow: 0 12px 28px rgba(28, 74, 51, 0.14);
+  left: -8px;
+  max-height: none;
+  padding: 8px;
+  position: relative;
   text-decoration: underline;
+  z-index: 3;
 }
 
 .product-modal-backdrop {
