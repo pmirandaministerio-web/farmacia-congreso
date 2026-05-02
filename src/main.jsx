@@ -311,6 +311,10 @@ function App() {
               ))}
             </div>
 
+            <div className="catalog-note">
+              Tenemos muchos otros productos que no figuran en la web. Consultanos stock por WhatsApp.
+            </div>
+
             {offers.length > 0 && (
               <section className="offers">
                 <div className="section-head compact-head">
@@ -381,7 +385,7 @@ function CartPanel({ cart, total, onRemove, onClear, onCheckout }) {
         )}
       </div>
       {cart.length === 0 ? (
-        <p className="muted">Agregá productos para preparar tu pedido.</p>
+        <p className="muted">Agregá productos para preparar tu pedido. También podés consultar stock de otros productos por WhatsApp.</p>
       ) : (
         <div className="cart-list">
           {cart.map((item, index) => (
