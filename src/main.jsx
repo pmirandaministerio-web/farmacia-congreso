@@ -9,6 +9,11 @@ const WHATSAPP_URL = "https://wa.me/5493816322825";
 const MAPS_URL = "https://maps.app.goo.gl/p4TwLfQRTdFeTsoi6";
 const ADDRESS = "Barrio Congreso, San Miguel de Tucumán, Argentina";
 const API_BASE = import.meta.env.VITE_API_URL || "";
+const IMAGE_PRESETS = {
+  logo: { maxWidth: 520, maxHeight: 520, quality: 0.78 },
+  heroImage: { maxWidth: 1400, maxHeight: 760, quality: 0.78 },
+  product: { maxWidth: 820, maxHeight: 820, quality: 0.76 }
+};
 
 const initialStore = {
   logo: "",
@@ -119,9 +124,12 @@ function App() {
 
   function saveStore(next) {
     setStore(next);
-    persistStore(next)
+    return persistStore(next)
       .then((savedStore) => setStore({ ...initialStore, ...savedStore }))
-      .catch(() => alert("No se pudo guardar. Revisá la conexión con el servidor."));
+      .catch((error) => {
+        alert("No se pudo guardar. Revisá la conexión con el servidor o probá optimizar las imágenes.");
+        throw error;
+      });
   }
 
   const filteredProducts = useMemo(() => {
@@ -368,14 +376,39 @@ function AdminPanel({ store, saveStore, onClose }) {
       .catch((error) => setMessage(error.message));
   }
 
-  function updateAsset(key, file) {
+  async function updateAsset(key, file) {
     if (!file) return;
-    imageToDataUrl(file).then((image) => saveStore({ ...store, [key]: image }));
+    setMessage("Optimizando imagen...");
+    try {
+      const image = await imageToDataUrl(file, IMAGE_PRESETS[key]);
+      await saveStore({ ...store, [key]: image });
+      setMessage("Imagen guardada.");
+    } catch {
+      setMessage("No se pudo guardar la imagen.");
+    }
   }
 
-  function updateProductImage(file) {
+  async function updateProductImage(file) {
     if (!file) return;
-    imageToDataUrl(file).then((image) => setForm((current) => ({ ...current, image })));
+    setMessage("Optimizando imagen...");
+    try {
+      const image = await imageToDataUrl(file, IMAGE_PRESETS.product);
+      setForm((current) => ({ ...current, image }));
+      setMessage("Imagen lista para guardar.");
+    } catch {
+      setMessage("No se pudo procesar la imagen.");
+    }
+  }
+
+  async function optimizeCurrentImages() {
+    setMessage("Optimizando imágenes cargadas...");
+    try {
+      const optimizedStore = await optimizeStoreImages(store);
+      await saveStore(optimizedStore);
+      setMessage("Imágenes optimizadas y guardadas.");
+    } catch {
+      setMessage("No se pudieron optimizar las imágenes.");
+    }
   }
 
   function submitProduct(event) {
@@ -440,6 +473,9 @@ function AdminPanel({ store, saveStore, onClose }) {
           <div className="admin-grid">
             <section className="admin-card">
               <h3>Imagen principal y logo</h3>
+              <button className="optimize-button" type="button" onClick={optimizeCurrentImages}>
+                Optimizar imágenes actuales
+              </button>
               <div className="asset-grid">
                 <label className="upload-card">
                   <ImageBox src={store.logo} alt="Logo actual" compact />
@@ -540,13 +576,59 @@ function emptyProduct() {
   };
 }
 
-function imageToDataUrl(file) {
+function imageToDataUrl(file, preset = IMAGE_PRESETS.product) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
+    reader.onload = () => {
+      compressDataUrl(reader.result, preset).then(resolve).catch(reject);
+    };
     reader.onerror = reject;
     reader.readAsDataURL(file);
   });
+}
+
+function compressDataUrl(dataUrl, preset = IMAGE_PRESETS.product) {
+  if (!dataUrl || !dataUrl.startsWith("data:image/")) {
+    return Promise.resolve(dataUrl);
+  }
+
+  return new Promise((resolve) => {
+    const image = new Image();
+    image.onload = () => {
+      const scale = Math.min(1, preset.maxWidth / image.width, preset.maxHeight / image.height);
+      const width = Math.max(1, Math.round(image.width * scale));
+      const height = Math.max(1, Math.round(image.height * scale));
+      const canvas = document.createElement("canvas");
+      const context = canvas.getContext("2d");
+
+      canvas.width = width;
+      canvas.height = height;
+      context.fillStyle = "#ffffff";
+      context.fillRect(0, 0, width, height);
+      context.drawImage(image, 0, 0, width, height);
+
+      const compressed = canvas.toDataURL("image/jpeg", preset.quality);
+      resolve(compressed.length < dataUrl.length ? compressed : dataUrl);
+    };
+    image.onerror = () => resolve(dataUrl);
+    image.src = dataUrl;
+  });
+}
+
+async function optimizeStoreImages(store) {
+  const products = await Promise.all(
+    store.products.map(async (product) => ({
+      ...product,
+      image: await compressDataUrl(product.image, IMAGE_PRESETS.product)
+    }))
+  );
+
+  return {
+    ...store,
+    logo: await compressDataUrl(store.logo, IMAGE_PRESETS.logo),
+    heroImage: await compressDataUrl(store.heroImage, IMAGE_PRESETS.heroImage),
+    products
+  };
 }
 
 createRoot(document.getElementById("root")).render(<App />);

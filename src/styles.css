@@ -621,6 +621,18 @@ a {
   margin: 0 0 14px;
 }
 
+.optimize-button {
+  background: #edf5f0;
+  border: 1px solid #d7e7de;
+  border-radius: 999px;
+  color: #1f5d3f;
+  cursor: pointer;
+  font-weight: 800;
+  margin-bottom: 12px;
+  min-height: 38px;
+  padding: 0 14px;
+}
+
 .asset-grid {
   display: grid;
   gap: 12px;
