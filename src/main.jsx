@@ -67,19 +67,27 @@ async function adminRequest(path, method, payload) {
 }
 
 function saveProductRemote(product) {
-  return adminRequest("/api/product", "PUT", { product });
+  return adminRequest(adminEndpoint("product", "/api/product"), "PUT", { product });
 }
 
 function deleteProductRemote(id) {
-  return adminRequest("/api/product", "DELETE", { id });
+  return adminRequest(adminEndpoint("product", "/api/product"), "DELETE", { id });
 }
 
 function saveAssetRemote(key, value) {
-  return adminRequest("/api/asset", "PUT", { key, value });
+  return adminRequest(adminEndpoint("asset", "/api/asset"), "PUT", { key, value });
 }
 
 function migrateImagesRemote() {
-  return adminRequest("/api/migrate-images", "PUT", {});
+  return adminRequest(adminEndpoint("migrate-images", "/api/migrate-images"), "PUT", {});
+}
+
+function adminEndpoint(action, localPath) {
+  if (typeof window !== "undefined" && window.location.hostname.includes("netlify.app")) {
+    return `/.netlify/functions/store?action=${action}`;
+  }
+
+  return localPath;
 }
 
 async function loginAdmin(credentials) {
