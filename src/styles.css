@@ -256,9 +256,8 @@ a {
 
 .shop-layout {
   align-items: start;
-  display: grid;
+  display: block;
   gap: 22px;
-  grid-template-columns: minmax(0, 1fr) 340px;
   margin: 0 auto;
   max-width: 1180px;
   padding: 10px 18px 46px;
@@ -468,11 +467,51 @@ a {
   padding: 12px 14px;
 }
 
+.floating-cart {
+  position: fixed;
+  right: max(14px, calc((100vw - 1180px) / 2 + 18px));
+  top: 104px;
+  z-index: 25;
+}
+
+.cart-toggle {
+  align-items: center;
+  background: #0c8a4a;
+  border: 0;
+  border-radius: 999px;
+  box-shadow: 0 14px 34px rgba(12, 138, 74, 0.28);
+  color: #fff;
+  cursor: pointer;
+  display: inline-flex;
+  gap: 8px;
+  min-height: 46px;
+  padding: 0 10px 0 16px;
+}
+
+.cart-toggle span {
+  font-weight: 850;
+}
+
+.cart-toggle strong {
+  align-items: center;
+  background: #fff;
+  border-radius: 999px;
+  color: #0c8a4a;
+  display: grid;
+  font-size: 0.86rem;
+  height: 26px;
+  justify-items: center;
+  min-width: 26px;
+  padding: 0 7px;
+}
+
 .cart-panel {
-  border-radius: 22px;
-  padding: 18px;
-  position: sticky;
-  top: 92px;
+  border-radius: 18px;
+  margin-top: 10px;
+  max-height: min(520px, calc(100vh - 170px));
+  overflow: auto;
+  padding: 16px;
+  width: min(360px, calc(100vw - 28px));
 }
 
 .cart-title {
@@ -767,7 +806,6 @@ a {
   }
 
   .hero,
-  .shop-layout,
   .site-footer,
   .admin-grid {
     grid-template-columns: 1fr;
@@ -777,8 +815,9 @@ a {
     min-height: auto;
   }
 
-  .cart-panel {
-    position: static;
+  .floating-cart {
+    right: 14px;
+    top: 98px;
   }
 }
 
@@ -790,6 +829,15 @@ a {
   .icon-button {
     width: 44px;
     padding: 0;
+  }
+
+  .cart-toggle span {
+    display: none;
+  }
+
+  .cart-toggle {
+    min-height: 44px;
+    padding: 0 8px 0 13px;
   }
 
   .hero-copy h2 {

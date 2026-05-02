@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "./styles.css";
 
-const CATEGORIES = ["Perfumería", "Limpieza", "Higiene personal", "Medicamentos", "Bebes", "Otros"];
+const CATEGORIES = ["Perfumería", "Limpieza", "Higiene personal", "Medicamentos", "Bebes", "Belleza", "Suplementos", "Otros"];
 const PHONE_DISPLAY = "+54 381 632-2825";
 const PHONE_TEL = "+543816322825";
 const WHATSAPP_URL = "https://wa.me/5493816322825";
@@ -154,6 +154,7 @@ function App() {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("Todas");
   const [cart, setCart] = useState([]);
+  const [cartOpen, setCartOpen] = useState(false);
   const [adminOpen, setAdminOpen] = useState(false);
 
   useEffect(() => {
@@ -193,6 +194,7 @@ function App() {
   function addToCart(product) {
     if (product.stock !== "Disponible") return;
     setCart((items) => [...items, product]);
+    setCartOpen(true);
   }
 
   function removeFromCart(index) {
@@ -248,6 +250,23 @@ function App() {
           </nav>
         </div>
       </header>
+
+      <div className="floating-cart">
+        <button className="cart-toggle" type="button" onClick={() => setCartOpen((open) => !open)} aria-expanded={cartOpen}>
+          <Icon name="cart" />
+          <span>Carrito</span>
+          <strong>{cart.length}</strong>
+        </button>
+        {cartOpen && (
+          <CartPanel
+            cart={cart}
+            total={total}
+            onRemove={removeFromCart}
+            onClear={clearCart}
+            onCheckout={checkout}
+          />
+        )}
+      </div>
 
       <main>
         <section className="hero">
@@ -322,42 +341,6 @@ function App() {
             )}
           </div>
 
-          <aside className="cart-panel">
-            <div className="cart-title">
-              <div>
-                <Icon name="cart" />
-                <h2>Carrito</h2>
-              </div>
-              {cart.length > 0 && (
-                <button className="clear-cart-button" type="button" onClick={clearCart}>
-                  Vaciar
-                </button>
-              )}
-            </div>
-            {cart.length === 0 ? (
-              <p className="muted">Agregá productos para preparar tu pedido.</p>
-            ) : (
-              <div className="cart-list">
-                {cart.map((item, index) => (
-                  <div className="cart-item" key={`${item.id}-${index}`}>
-                    <span>{item.name}</span>
-                    <strong>{money(item.price)}</strong>
-                    <button type="button" onClick={() => removeFromCart(index)} title="Quitar">
-                      <Icon name="close" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-            <div className="cart-total">
-              <span>Total</span>
-              <strong>{money(total)}</strong>
-            </div>
-            <button className="checkout-button" type="button" disabled={cart.length === 0} onClick={checkout}>
-              <Icon name="message" />
-              Finalizar compra por WhatsApp
-            </button>
-          </aside>
         </section>
       </main>
 
@@ -380,6 +363,47 @@ function App() {
 
       {adminOpen && <AdminPanel store={store} saveStore={saveStore} saveStoreLocally={saveStoreLocally} onClose={() => setAdminOpen(false)} />}
     </>
+  );
+}
+
+function CartPanel({ cart, total, onRemove, onClear, onCheckout }) {
+  return (
+    <aside className="cart-panel">
+      <div className="cart-title">
+        <div>
+          <Icon name="cart" />
+          <h2>Carrito</h2>
+        </div>
+        {cart.length > 0 && (
+          <button className="clear-cart-button" type="button" onClick={onClear}>
+            Vaciar
+          </button>
+        )}
+      </div>
+      {cart.length === 0 ? (
+        <p className="muted">Agregá productos para preparar tu pedido.</p>
+      ) : (
+        <div className="cart-list">
+          {cart.map((item, index) => (
+            <div className="cart-item" key={`${item.id}-${index}`}>
+              <span>{item.name}</span>
+              <strong>{money(item.price)}</strong>
+              <button type="button" onClick={() => onRemove(index)} title="Quitar">
+                <Icon name="close" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+      <div className="cart-total">
+        <span>Total</span>
+        <strong>{money(total)}</strong>
+      </div>
+      <button className="checkout-button" type="button" disabled={cart.length === 0} onClick={onCheckout}>
+        <Icon name="message" />
+        Finalizar compra por WhatsApp
+      </button>
+    </aside>
   );
 }
 
