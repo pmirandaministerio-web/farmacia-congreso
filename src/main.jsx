@@ -155,6 +155,7 @@ function App() {
   const [category, setCategory] = useState("Todas");
   const [cart, setCart] = useState([]);
   const [cartOpen, setCartOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
   const [adminOpen, setAdminOpen] = useState(false);
 
   useEffect(() => {
@@ -189,16 +190,29 @@ function App() {
   }, [store.products, query, category]);
 
   const offers = store.products.filter((product) => product.offer);
-  const total = cart.reduce((sum, item) => sum + Number(item.price || 0), 0);
+  const total = cart.reduce((sum, item) => sum + Number(item.price || 0) * item.quantity, 0);
+  const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
-  function addToCart(product) {
+  function addToCart(product, quantity = 1) {
     if (product.stock !== "Disponible") return;
-    setCart((items) => [...items, product]);
+    const amount = Math.max(1, Number(quantity) || 1);
+    setCart((items) => {
+      const exists = items.some((item) => item.id === product.id);
+      if (exists) {
+        return items.map((item) => item.id === product.id ? { ...item, quantity: item.quantity + amount } : item);
+      }
+      return [...items, { ...product, quantity: amount }];
+    });
     setCartOpen(true);
   }
 
-  function removeFromCart(index) {
-    setCart((items) => items.filter((_, itemIndex) => itemIndex !== index));
+  function removeFromCart(id) {
+    setCart((items) => items.filter((item) => item.id !== id));
+  }
+
+  function updateCartQuantity(id, quantity) {
+    const amount = Math.max(1, Number(quantity) || 1);
+    setCart((items) => items.map((item) => item.id === id ? { ...item, quantity: amount } : item));
   }
 
   function clearCart() {
@@ -206,7 +220,7 @@ function App() {
   }
 
   function checkout() {
-    const lines = cart.map((item) => `- ${item.name} - ${money(item.price)}`);
+    const lines = cart.map((item) => `- ${item.name} x${item.quantity} - ${money(Number(item.price || 0) * item.quantity)}`);
     const text = `Hola, quiero hacer un pedido:\n\n${lines.join("\n")}\n\nTotal: ${money(total)}`;
     window.open(`${WHATSAPP_URL}?text=${encodeURIComponent(text)}`, "_blank", "noopener,noreferrer");
   }
@@ -255,13 +269,14 @@ function App() {
         <button className="cart-toggle" type="button" onClick={() => setCartOpen((open) => !open)} aria-expanded={cartOpen}>
           <Icon name="cart" />
           <span>Carrito</span>
-          <strong>{cart.length}</strong>
+          <strong>{cartCount}</strong>
         </button>
         {cartOpen && (
           <CartPanel
             cart={cart}
             total={total}
             onRemove={removeFromCart}
+            onQuantity={updateCartQuantity}
             onClear={clearCart}
             onCheckout={checkout}
           />
@@ -325,7 +340,7 @@ function App() {
                 </div>
                 <div className="product-grid">
                   {offers.map((product) => (
-                    <ProductCard key={product.id} product={product} onAdd={addToCart} />
+                    <ProductCard key={product.id} product={product} onAdd={addToCart} onView={setSelectedProduct} />
                   ))}
                 </div>
               </section>
@@ -333,7 +348,7 @@ function App() {
 
             <div className="product-grid">
               {filteredProducts.map((product) => (
-                <ProductCard key={product.id} product={product} onAdd={addToCart} />
+                <ProductCard key={product.id} product={product} onAdd={addToCart} onView={setSelectedProduct} />
               ))}
             </div>
 
@@ -366,11 +381,18 @@ function App() {
       </footer>
 
       {adminOpen && <AdminPanel store={store} saveStore={saveStore} saveStoreLocally={saveStoreLocally} onClose={() => setAdminOpen(false)} />}
+      {selectedProduct && (
+        <ProductModal
+          product={selectedProduct}
+          onClose={() => setSelectedProduct(null)}
+          onAdd={addToCart}
+        />
+      )}
     </>
   );
 }
 
-function CartPanel({ cart, total, onRemove, onClear, onCheckout }) {
+function CartPanel({ cart, total, onRemove, onQuantity, onClear, onCheckout }) {
   return (
     <aside className="cart-panel">
       <div className="cart-title">
@@ -388,11 +410,12 @@ function CartPanel({ cart, total, onRemove, onClear, onCheckout }) {
         <p className="muted">Agregá productos para preparar tu pedido. También podés consultar stock de otros productos por WhatsApp.</p>
       ) : (
         <div className="cart-list">
-          {cart.map((item, index) => (
-            <div className="cart-item" key={`${item.id}-${index}`}>
+          {cart.map((item) => (
+            <div className="cart-item" key={item.id}>
               <span>{item.name}</span>
-              <strong>{money(item.price)}</strong>
-              <button type="button" onClick={() => onRemove(index)} title="Quitar">
+              <input aria-label={`Cantidad de ${item.name}`} type="number" min="1" value={item.quantity} onChange={(event) => onQuantity(item.id, event.target.value)} />
+              <strong>{money(Number(item.price || 0) * item.quantity)}</strong>
+              <button type="button" onClick={() => onRemove(item.id)} title="Quitar">
                 <Icon name="close" />
               </button>
             </div>
@@ -411,15 +434,19 @@ function CartPanel({ cart, total, onRemove, onClear, onCheckout }) {
   );
 }
 
-function ProductCard({ product, onAdd }) {
+function ProductCard({ product, onAdd, onView }) {
   const outOfStock = product.stock !== "Disponible";
   return (
     <article className="product-card">
       {product.offer && <span className="offer-badge">OFERTA</span>}
-      <ImageBox src={product.image} alt={product.name} />
+      <button className="product-image-button" type="button" onClick={() => onView(product)}>
+        <ImageBox src={product.image} alt={product.name} />
+      </button>
       <div className="product-info">
         <span className="category-chip">{product.category}</span>
-        <h3>{product.name}</h3>
+        <button className="product-name-button" type="button" onClick={() => onView(product)}>
+          {product.name}
+        </button>
         <div className="product-meta">
           <strong>{money(product.price)}</strong>
           <span className={outOfStock ? "stock off" : "stock"}>{product.stock}</span>
@@ -430,6 +457,47 @@ function ProductCard({ product, onAdd }) {
         </button>
       </div>
     </article>
+  );
+}
+
+function ProductModal({ product, onClose, onAdd }) {
+  const [quantity, setQuantity] = useState(1);
+  const [zoomed, setZoomed] = useState(false);
+  const outOfStock = product.stock !== "Disponible";
+
+  function addSelected() {
+    onAdd(product, quantity);
+    onClose();
+  }
+
+  return (
+    <div className="modal-backdrop product-modal-backdrop" role="dialog" aria-modal="true" aria-label={product.name}>
+      <div className="product-modal">
+        <button className="round-button modal-close" type="button" onClick={onClose} title="Cerrar">
+          <Icon name="close" />
+        </button>
+        <button className={`modal-image-wrap ${zoomed ? "zoomed" : ""}`} type="button" onClick={() => setZoomed((value) => !value)}>
+          <ImageBox src={product.image} alt={product.name} />
+        </button>
+        <div className="modal-product-info">
+          {product.offer && <span className="offer-badge inline">OFERTA</span>}
+          <span className="category-chip">{product.category}</span>
+          <h2>{product.name}</h2>
+          <div className="product-meta">
+            <strong>{money(product.price)}</strong>
+            <span className={outOfStock ? "stock off" : "stock"}>{product.stock}</span>
+          </div>
+          <label className="quantity-field">
+            Cantidad
+            <input type="number" min="1" value={quantity} onChange={(event) => setQuantity(Math.max(1, Number(event.target.value) || 1))} />
+          </label>
+          <button className="checkout-button" type="button" disabled={outOfStock} onClick={addSelected}>
+            <Icon name="plus" />
+            Agregar {quantity} al carrito
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
