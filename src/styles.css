@@ -631,12 +631,7 @@ a {
 
 .product-image-button .product-image,
 .product-image-button .image-empty {
-  transition: transform 180ms ease;
-}
-
-.product-image-button:hover .product-image,
-.product-image-button:hover .image-empty {
-  transform: scale(1.02);
+  transition: opacity 160ms ease;
 }
 
 .product-name-button {
@@ -645,23 +640,27 @@ a {
   margin: 12px 0;
 }
 
+.product-name-button:hover,
+.product-name-button:focus-visible {
+  text-decoration: underline;
+}
+
 .product-modal-backdrop {
   z-index: 70;
 }
 
-.product-modal {
+.image-modal {
   background: #fff;
   border: 1px solid #e0ebe5;
   border-radius: 24px;
   box-shadow: 0 24px 70px rgba(13, 31, 22, 0.22);
   display: grid;
-  gap: 18px;
-  grid-template-columns: minmax(280px, 1.15fr) minmax(260px, 0.85fr);
+  gap: 12px;
   margin: auto;
-  max-width: 980px;
+  max-width: 820px;
   padding: 18px;
   position: relative;
-  width: min(100%, 980px);
+  width: min(100%, 820px);
 }
 
 .modal-close {
@@ -674,13 +673,11 @@ a {
 .modal-image-wrap {
   align-items: center;
   background: #eef5f1;
-  border: 0;
   border-radius: 18px;
-  cursor: zoom-in;
   display: flex;
   justify-content: center;
-  max-height: 72vh;
-  overflow: auto;
+  max-height: 78vh;
+  overflow: hidden;
   padding: 0;
 }
 
@@ -688,55 +685,16 @@ a {
 .modal-image-wrap .image-empty {
   aspect-ratio: auto;
   border-radius: 18px;
-  max-height: 72vh;
+  max-height: 78vh;
+  max-width: 100%;
   object-fit: contain;
 }
 
-.modal-image-wrap.zoomed {
-  align-items: flex-start;
-  cursor: zoom-out;
-}
-
-.modal-image-wrap.zoomed .product-image {
-  max-height: none;
-  max-width: none;
-  width: 145%;
-}
-
-.modal-product-info {
-  align-self: center;
-  padding: 18px 8px;
-}
-
-.modal-product-info h2 {
-  font-size: clamp(1.55rem, 4vw, 2.35rem);
-  line-height: 1.05;
-  margin: 14px 0;
-}
-
-.offer-badge.inline {
-  display: inline-flex;
-  left: auto;
-  margin-right: 8px;
-  position: static;
-  top: auto;
-}
-
-.quantity-field {
-  color: #4f665b;
-  display: grid;
+.image-modal-title {
+  color: #40594d;
   font-weight: 800;
-  gap: 8px;
-  margin: 18px 0;
-}
-
-.quantity-field input {
-  background: #f8fbf9;
-  border: 1px solid #d7e7de;
-  border-radius: 12px;
-  height: 46px;
-  padding: 0 12px;
-  width: 120px;
+  margin: 0;
+  padding: 0 4px 2px;
 }
 
 .site-footer {
@@ -953,7 +911,7 @@ a {
     grid-template-columns: 1fr;
   }
 
-  .product-modal {
+  .image-modal {
     grid-template-columns: 1fr;
   }
 
@@ -1014,13 +972,9 @@ a {
     grid-column: 1 / 3;
   }
 
-  .product-modal {
+  .image-modal {
     border-radius: 18px;
     padding: 12px;
-  }
-
-  .modal-product-info {
-    padding: 10px 2px;
   }
 
   .admin-panel {

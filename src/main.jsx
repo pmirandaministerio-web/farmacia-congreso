@@ -382,10 +382,9 @@ function App() {
 
       {adminOpen && <AdminPanel store={store} saveStore={saveStore} saveStoreLocally={saveStoreLocally} onClose={() => setAdminOpen(false)} />}
       {selectedProduct && (
-        <ProductModal
+        <ImageModal
           product={selectedProduct}
           onClose={() => setSelectedProduct(null)}
-          onAdd={addToCart}
         />
       )}
     </>
@@ -460,42 +459,17 @@ function ProductCard({ product, onAdd, onView }) {
   );
 }
 
-function ProductModal({ product, onClose, onAdd }) {
-  const [quantity, setQuantity] = useState(1);
-  const [zoomed, setZoomed] = useState(false);
-  const outOfStock = product.stock !== "Disponible";
-
-  function addSelected() {
-    onAdd(product, quantity);
-    onClose();
-  }
-
+function ImageModal({ product, onClose }) {
   return (
     <div className="modal-backdrop product-modal-backdrop" role="dialog" aria-modal="true" aria-label={product.name}>
-      <div className="product-modal">
+      <div className="image-modal">
         <button className="round-button modal-close" type="button" onClick={onClose} title="Cerrar">
           <Icon name="close" />
         </button>
-        <button className={`modal-image-wrap ${zoomed ? "zoomed" : ""}`} type="button" onClick={() => setZoomed((value) => !value)}>
+        <div className="modal-image-wrap">
           <ImageBox src={product.image} alt={product.name} />
-        </button>
-        <div className="modal-product-info">
-          {product.offer && <span className="offer-badge inline">OFERTA</span>}
-          <span className="category-chip">{product.category}</span>
-          <h2>{product.name}</h2>
-          <div className="product-meta">
-            <strong>{money(product.price)}</strong>
-            <span className={outOfStock ? "stock off" : "stock"}>{product.stock}</span>
-          </div>
-          <label className="quantity-field">
-            Cantidad
-            <input type="number" min="1" value={quantity} onChange={(event) => setQuantity(Math.max(1, Number(event.target.value) || 1))} />
-          </label>
-          <button className="checkout-button" type="button" disabled={outOfStock} onClick={addSelected}>
-            <Icon name="plus" />
-            Agregar {quantity} al carrito
-          </button>
         </div>
+        <p className="image-modal-title">{product.name}</p>
       </div>
     </div>
   );
