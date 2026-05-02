@@ -41,9 +41,44 @@ a {
   stroke-width: 2;
 }
 
-.site-header {
+.top-ticker {
+  background: #0b7f47;
+  color: #fff;
+  font-size: 0.86rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  overflow: hidden;
   position: sticky;
   top: 0;
+  z-index: 30;
+}
+
+.ticker-track {
+  display: flex;
+  gap: 40px;
+  min-width: max-content;
+  padding: 8px 0;
+  animation: ticker-scroll 22s linear infinite;
+}
+
+.ticker-track span {
+  padding-left: 40px;
+  white-space: nowrap;
+}
+
+@keyframes ticker-scroll {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.site-header {
+  position: sticky;
+  top: 34px;
   z-index: 20;
   background: rgba(255, 255, 255, 0.92);
   border-bottom: 1px solid #e0ebe5;
@@ -443,8 +478,32 @@ a {
 .cart-title {
   align-items: center;
   display: flex;
+  justify-content: space-between;
   gap: 10px;
   margin-bottom: 12px;
+}
+
+.cart-title > div {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+}
+
+.clear-cart-button {
+  background: #edf5f0;
+  border: 0;
+  border-radius: 999px;
+  color: #1f5d3f;
+  cursor: pointer;
+  font-weight: 800;
+  min-height: 34px;
+  padding: 0 12px;
+  transition: transform 160ms ease, background 160ms ease;
+}
+
+.clear-cart-button:hover {
+  background: #dcece4;
+  transform: translateY(-1px);
 }
 
 .muted {

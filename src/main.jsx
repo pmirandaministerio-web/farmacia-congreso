@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "./styles.css";
 
-const CATEGORIES = ["Perfumería", "Limpieza", "Higiene personal", "Medicamentos"];
+const CATEGORIES = ["Perfumería", "Limpieza", "Higiene personal", "Medicamentos", "Bebes", "Otros"];
 const PHONE_DISPLAY = "+54 381 632-2825";
 const PHONE_TEL = "+543816322825";
 const WHATSAPP_URL = "https://wa.me/5493816322825";
@@ -144,6 +144,10 @@ function App() {
     setCart((items) => items.filter((_, itemIndex) => itemIndex !== index));
   }
 
+  function clearCart() {
+    setCart([]);
+  }
+
   function checkout() {
     const lines = cart.map((item) => `- ${item.name} - ${money(item.price)}`);
     const text = `Hola, quiero hacer un pedido:\n\n${lines.join("\n")}\n\nTotal: ${money(total)}`;
@@ -152,6 +156,13 @@ function App() {
 
   return (
     <>
+      <div className="top-ticker" aria-label="Informacion de envios">
+        <div className="ticker-track">
+          <span>Entregas gratis con monto minimo de compra segun la zona. Hacemos envios a domicilio.</span>
+          <span aria-hidden="true">Entregas gratis con monto minimo de compra segun la zona. Hacemos envios a domicilio.</span>
+        </div>
+      </div>
+
       <header className="site-header">
         <div className="header-inner">
           <div className="brand">
@@ -258,8 +269,15 @@ function App() {
 
           <aside className="cart-panel">
             <div className="cart-title">
-              <Icon name="cart" />
-              <h2>Carrito</h2>
+              <div>
+                <Icon name="cart" />
+                <h2>Carrito</h2>
+              </div>
+              {cart.length > 0 && (
+                <button className="clear-cart-button" type="button" onClick={clearCart}>
+                  Vaciar
+                </button>
+              )}
             </div>
             {cart.length === 0 ? (
               <p className="muted">Agregá productos para preparar tu pedido.</p>
@@ -297,6 +315,7 @@ function App() {
         <div className="footer-notes">
           <span>Aceptamos todos los medios de pago</span>
           <span>Trabajamos con obras sociales</span>
+          <span>Hacemos envios a domicilio</span>
         </div>
         <div className="footer-actions">
           <a href={WHATSAPP_URL} target="_blank" rel="noreferrer">WhatsApp</a>
